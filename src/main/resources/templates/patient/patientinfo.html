@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>MedReminder Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .gradient-header {
+            background: linear-gradient(90deg, #0d6efd, #20c997);
+            padding: 1rem;
+        }
+        .patient-card {
+            margin-bottom: 2rem;
+            border: 1px solid #dee2e6;
+            border-radius: 0.5rem;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        }
+        .patient-header {
+            background-color: #f8f9fa;
+            padding: 1rem;
+            border-bottom: 1px solid #dee2e6;
+            border-radius: 0.5rem 0.5rem 0 0;
+        }
+        .schedule-slot {
+            margin: 0.5rem 0;
+        }
+        .schedule-header {
+            cursor: pointer;
+            padding: 0.75rem;
+            background-color: #e9ecef;
+            border-radius: 0.25rem;
+        }
+        .schedule-content {
+            padding: 1rem;
+            border: 1px solid #dee2e6;
+            border-radius: 0 0 0.25rem 0.25rem;
+        }
+        .action-buttons .btn {
+            margin-left: 0.5rem;
+        }
+        .medicine-list {
+            margin-top: 0.5rem;
+        }
+        .medicine-item {
+            padding: 0.5rem;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .medicine-item:last-child {
+            border-bottom: none;
+        }
+        .table {
+            margin-bottom: 0;
+        }
+        .table thead th {
+            background-color: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+        }
+        .table td, .table th {
+            padding: 0.75rem;
+            vertical-align: middle;
+        }
+        .table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+        /* Days dropdown specific styles */
+        .days-dropdown {
+            position: relative;
+        }
+        
+        .days-dropdown .dropdown-toggle {
+            text-align: left;
+            position: relative;
+            padding-right: 2rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .days-dropdown .dropdown-toggle::after {
+            position: absolute;
+            right: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        
+        .days-dropdown .collapse {
+            position: absolute;
+            width: 100%;
+            z-index: 1000;
+            margin-top: 0.25rem;
+        }
+        
+        .days-dropdown .form-check {
+            padding: 0.5rem 1rem;
+            margin: 0;
+            transition: background-color 0.15s ease-in-out;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            min-height: 42px;
+        }
+        
+        .days-dropdown .form-check:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .days-dropdown .form-check-input {
+            margin: 0;
+            width: 20px !important;
+            height: 20px !important;
+            min-width: 20px;
+            min-height: 20px;
+            border: 2px solid #dee2e6;
+            cursor: pointer;
+            flex-shrink: 0;
+            position: static;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            border-radius: 0.25rem;
+            vertical-align: middle;
+        }
+        
+        .days-dropdown .form-check-input:checked {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='M6 10l3 3l6-6'/%3e%3c/svg%3e");
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: 14px;
+        }
+        
+        .days-dropdown .form-check-label {
+            width: 100%;
+            cursor: pointer;
+            padding-left: 0.5rem;
+            user-select: none;
+            margin-bottom: 0;
+            font-size: 0.9375rem;
+            line-height: 1.25rem;
+            display: block;
+        }
+        
+        .days-dropdown .selected-days-count {
+            margin-left: 0.5rem;
+            color: #6c757d;
+        }
+        
+        .days-menu {
+            max-height: 250px;
+            overflow-y: auto;
+            box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.15);
+            background-color: white;
+            border: 1px solid rgba(0, 0, 0, 0.15);
+            border-radius: 0.25rem;
+            padding: 0.25rem 0;
+        }
+        
+        .days-menu::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .days-menu::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        
+        .days-menu::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 3px;
+        }
+        
+        .days-menu::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        .input-group .reminder-input {
+            min-width: 60px;
+            padding: 0.375rem 0.25rem;
+        }
+        
+        .input-group .btn {
+            padding: 0.375rem 0.5rem;
+            font-weight: bold;
+        }
+        
+        /* Hide number input spinners */
+        .reminder-input::-webkit-outer-spin-button,
+        .reminder-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        
+        .reminder-input[type=number] {
+            -moz-appearance: textfield;
+            appearance: textfield;
+        }
+        /* Reminder counter styles */
+        .input-group.reminder-group {
+            width: 120px;
+        }
+        
+        .input-group.reminder-group .btn {
+            z-index: 0;
+            background-color: #f8f9fa;
+            border-color: #dee2e6;
+            color: #212529;
+        }
+        
+        .input-group.reminder-group .btn:hover {
+            background-color: #e9ecef;
+        }
+        
+        .input-group.reminder-group .reminder-input {
+            text-align: center;
+            border-left: 0;
+            border-right: 0;
+            width: 50px;
+            padding: 0.375rem 0;
+        }
+        
+        .input-group.reminder-group .reminder-input:focus {
+            box-shadow: none;
+            border-color: #dee2e6;
+        }
+        .remove-schedule {
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+        }
+        
+        .remove-schedule i {
+            font-size: 0.875rem;
+        }
+        .schedule-entry {
+            position: relative;
+            padding: 0.5rem;
+            background-color: #fff;
+            margin-bottom: 0.5rem;
+            border: 1px solid #dee2e6;
+            border-radius: 0.25rem;
+        }
+        
+        .schedule-entry .row {
+            display: flex;
+            align-items: center;
+            flex-wrap: nowrap;
+            gap: 0.25rem;
+            margin: 0;
+            width: 100%;
+        }
+        
+        .medicine-name-col {
+            flex: 0 0 28%;
+            min-width: 160px;
+        }
+        
+        .dosage-col {
+            flex: 0 0 15%;
+            min-width: 90px;
+        }
+        
+        .days-col {
+            flex: 0 0 22%;
+            min-width: 140px;
+        }
+        
+        .time-col {
+            flex: 0 0 15%;
+            min-width: 100px;
+        }
+        
+        .reminder-col {
+            flex: 0 0 12%;
+            min-width: 90px;
+        }
+        
+        .delete-col {
+            flex: 0 0 32px;
+            width: 32px;
+            margin-left: auto;
+        }
+        
+        .reminder-group {
+            width: 90px;
+        }
+        
+        /* Adjust input heights */
+        .form-control,
+        .btn,
+        .input-group-text {
+            height: 32px;
+            padding-top: 0.25rem;
+            padding-bottom: 0.25rem;
+        }
+        
+        /* Adjust dropdown menu */
+        .days-dropdown .days-menu {
+            min-width: 160px;
+        }
+        
+        .days-dropdown .form-check {
+            min-height: 36px;
+            padding: 0.25rem 0.75rem;
+        }
+        
+        /* Modal body padding */
+        .modal-body {
+            padding: 1rem;
+        }
+        
+        /* Section spacing */
+        .mb-4 {
+            margin-bottom: 1rem !important;
+        }
+        
+        .mb-3 {
+            margin-bottom: 0.5rem !important;
+        }
+        
+        /* Form group spacing */
+        .form-group {
+            margin-bottom: 0.5rem;
+        }
+        
+        /* Placeholder styles */
+        .form-control::placeholder {
+            font-size: 0.875rem;
+            color: #6c757d;
+            opacity: 0.8;
+        }
+        
+        .form-control::-webkit-input-placeholder {
+            font-size: 0.875rem;
+            color: #6c757d;
+            opacity: 0.8;
+        }
+        
+        .form-control::-moz-placeholder {
+            font-size: 0.875rem;
+            color: #6c757d;
+            opacity: 0.8;
+        }
+        
+        .form-control:-ms-input-placeholder {
+            font-size: 0.875rem;
+            color: #6c757d;
+            opacity: 0.8;
+        }
+        .modal-dialog {
+            max-width: 1200px;
+            margin: 1.75rem auto;
+        }
+        .modal-content {
+            background-color: #f8f9fa;
+            border: none;
+            border-radius: 1rem;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        }
+        .modal-header {
+            background-color: #fff;
+            border-bottom: 1px solid #e9ecef;
+            border-radius: 1rem 1rem 0 0;
+            padding: 1.25rem 1.5rem;
+        }
+        .modal-footer {
+            background-color: #fff;
+            border-top: 1px solid #e9ecef;
+            border-radius: 0 0 1rem 1rem;
+            padding: 1.5rem;
+        }
+        /* Form sections */
+        .form-section {
+            background-color: #fff;
+            border: 1px solid #e9ecef;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .form-section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #e9ecef;
+        }
+        .form-section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #212529;
+            margin: 0;
+        }
+        /* Schedule entry styles */
+        .schedule-entry {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            margin-bottom: 0.75rem;
+            transition: all 0.2s ease-in-out;
+        }
+        .schedule-entry:hover {
+            border-color: #dee2e6;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        }
+        .schedule-entry .row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin: 0;
+            width: 100%;
+        }
+        .medicine-name-col {
+            flex: 0 0 22%;
+            min-width: 180px;
+        }
+        .dosage-col {
+            flex: 0 0 15%;
+            min-width: 120px;
+        }
+        .days-col {
+            flex: 0 0 25%;
+            min-width: 180px;
+        }
+        .time-col {
+            flex: 0 0 15%;
+            min-width: 100px;
+        }
+        .reminder-col {
+            flex: 0 0 15%;
+            min-width: 100px;
+        }
+        .delete-col {
+            flex: 0 0 40px;
+        }
+        /* Input styles */
+        .form-control {
+            height: 36px;
+            padding: 0.375rem 0.75rem;
+            font-size: 0.9rem;
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+        }
+        .form-control:focus {
+            border-color: #80bdff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.15);
+        }
+        .form-label {
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: #495057;
+        }
+        .btn {
+            height: 38px;
+            padding: 0.5rem 1rem;
+            font-size: 0.9375rem;
+            border-radius: 0.375rem;
+            font-weight: 500;
+        }
+        /* Reminder group */
+        .reminder-group {
+            width: 120px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+            overflow: hidden;
+            background-color: #fff;
+        }
+        .reminder-group .btn {
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            background-color: #f8f9fa;
+            border: none;
+            color: #212529;
+            transition: all 0.2s ease-in-out;
+        }
+        .reminder-group .btn:hover {
+            background-color: #e9ecef;
+        }
+        .reminder-group .reminder-input {
+            width: 48px;
+            height: 36px;
+            text-align: center;
+            border: none;
+            font-size: 1rem;
+            font-weight: 500;
+            padding: 0;
+            background-color: #fff;
+        }
+        .reminder-group .reminder-input:focus {
+            outline: none;
+            box-shadow: none;
+        }
+        /* Delete button */
+        .remove-schedule {
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #dc3545;
+            border: none;
+            color: #fff;
+            border-radius: 0.375rem;
+            transition: all 0.2s ease-in-out;
+        }
+        .remove-schedule:hover {
+            background-color: #c82333;
+            transform: scale(1.05);
+        }
+        .remove-schedule:active {
+            transform: scale(0.95);
+        }
+        .remove-schedule i {
+            font-size: 0.875rem;
+            line-height: 1;
+        }
+        /* Responsive adjustments */
+        @media (max-width: 992px) {
+            .schedule-entry .row {
+                flex-wrap: wrap;
+            }
+            .medicine-name-col {
+                flex: 0 0 100%;
+            }
+            .dosage-col,
+            .days-col,
+            .time-col {
+                flex: 0 0 calc(33.333% - 0.75rem);
+            }
+            .reminder-col {
+                flex: 0 0 110px;
+                margin-right: 10px;
+            }
+            .delete-col {
+                flex: 0 0 40px;
+            }
+        }
+        @media (max-width: 768px) {
+            .dosage-col,
+            .days-col,
+            .time-col {
+                flex: 0 0 100%;
+            }
+            .reminder-col {
+                flex: 0 0 110px;
+            }
+            .delete-col {
+                flex: 0 0 40px;
+            }
+        }
+        /* Days dropdown */
+        .days-dropdown .dropdown-toggle {
+            height: 36px;
+            padding: 0.375rem 0.75rem;
+            font-size: 0.9rem;
+        }
+        .days-dropdown .days-menu {
+            padding: 0.25rem 0;
+        }
+        .days-dropdown .form-check {
+            padding: 0.375rem 0.75rem;
+            min-height: 32px;
+        }
+        .days-dropdown .form-check-input {
+            width: 1.25rem !important;
+            height: 1.25rem !important;
+            margin-right: 0.75rem;
+            cursor: pointer;
+        }
+        .days-dropdown .form-check-label {
+            font-size: 0.9375rem;
+            cursor: pointer;
+        }
+        /* Modal and form layout */
+        .modal-dialog {
+            max-width: 1100px;
+            margin: 1.75rem auto;
+        }
+
+        .modal-content {
+            background-color: #f8f9fa;
+        }
+
+        .modal-body {
+            background-color: #fff;
+            padding: 1.5rem;
+        }
+
+        /* Schedule entry layout */
+        .schedule-entry {
+            padding: 1rem;
+            margin-bottom: 1rem;
+            background-color: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: 0.5rem;
+        }
+
+        .schedule-entry .row {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin: 0;
+            width: 100%;
+        }
+
+        /* Column widths */
+        .medicine-name-col {
+            flex: 0 0 25%;
+            min-width: 200px;
+        }
+
+        .dosage-col {
+            flex: 0 0 15%;
+            min-width: 120px;
+        }
+
+        .days-col {
+            flex: 0 0 25%;
+            min-width: 180px;
+        }
+
+        .time-col {
+            flex: 0 0 15%;
+            min-width: 120px;
+        }
+
+        .reminder-col {
+            flex: 0 0 15%;
+            min-width: 120px;
+        }
+
+        .delete-col {
+            flex: 0 0 40px;
+            width: 40px;
+        }
+
+        /* Reminder group */
+        .reminder-group {
+            width: 120px;
+            height: 36px;
+        }
+
+        .reminder-group .btn {
+            padding: 0.25rem 0.5rem;
+            height: 32px;
+            line-height: 1;
+            border: 1px solid #dee2e6;
+            background-color: #f8f9fa;
+            color: #212529;
+        }
+
+        .reminder-group .reminder-input {
+            width: 50px;
+            text-align: center;
+            padding: 0.25rem;
+            height: 32px;
+            border-radius: 0;
+            border-left: 0;
+            border-right: 0;
+        }
+
+        /* Delete button */
+        .remove-schedule {
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            background-color: #dc3545;
+            border-color: #dc3545;
+            color: #fff;
+            margin-left: 0;
+        }
+
+        .remove-schedule:hover {
+            background-color: #bb2d3b;
+            border-color: #b02a37;
+        }
+
+        .remove-schedule i {
+            font-size: 0.875rem;
+            line-height: 1;
+        }
+
+        /* Form controls */
+        .form-control {
+            height: 36px;
+            padding: 0.375rem 0.75rem;
+            font-size: 0.9rem;
+        }
+
+        /* Days dropdown */
+        .days-dropdown {
+            position: relative;
+            width: 100%;
+        }
+
+        .days-dropdown .dropdown-toggle {
+            height: 36px;
+            text-align: left;
+            padding: 0.375rem 0.75rem;
+            font-size: 0.9rem;
+            width: 100%;
+        }
+
+        .days-menu {
+            max-height: 250px;
+            overflow-y: auto;
+            background-color: white;
+            border: 1px solid rgba(0, 0, 0, 0.15);
+            border-radius: 0.25rem;
+            box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            position: absolute;
+            width: 100%;
+        }
+
+        /* Modal header styles */
+        .modal-header .d-flex {
+            gap: 1rem;
+            align-items: center;
+        }
+
+        #reminderCounter {
+            font-size: 0.95rem;
+            color: #495057;
+            font-weight: 600;
+            padding: 0.5rem 1rem;
+            background-color: #e9ecef;
+            border-radius: 0.5rem;
+            margin-right: 1rem;
+            display: inline-block;
+            border: 1px solid #dee2e6;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .modal-header .btn-danger {
+            padding: 0.25rem 0.75rem;
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .modal-header .btn-danger i {
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="gradient-header">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center">
+                <img src="/images/logo.png" alt="MedReminder" height="40">
+                <a href="/logout" class="btn btn-dark">
+                    <i class="fas fa-sign-out-alt"></i> Log Out
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container mt-4">
+        <!-- Add Patient Button -->
+        <div class="mb-4">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addPatientModal">
+                <i class="fas fa-user-plus"></i> Add Patient
+            </button>
+        </div>
+
+        <!-- Add Patient Modal -->
+        <div class="modal fade" id="addPatientModal" tabindex="-1" aria-labelledby="addPatientModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="addPatientModalLabel">Add New Patient</h5>
+                        <div class="d-flex align-items-center">
+                            <span id="reminderCounter">Total Reminders: 0</span>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                    </div>
+                    <div class="modal-body">
+                        <form id="addPatientForm" method="POST" action="/api/patients">
+                            <!-- Patient Details Section -->
+                            <div class="form-section">
+                                <div class="form-section-header">
+                                    <h6 class="form-section-title">Patient Information</h6>
+                                </div>
+                                <div class="row g-4">
+                                    <div class="col-md-6">
+                                        <label for="patientName" class="form-label">Patient Name</label>
+                                        <input type="text" class="form-control" id="patientName" name="name" placeholder="Enter patient name" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="deviceId" class="form-label">Device ID</label>
+                                        <input type="text" class="form-control" id="deviceId" name="deviceId" placeholder="Enter device ID (optional)">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Medicine Schedules Section -->
+                            <div class="form-section">
+                                <div class="form-section-header">
+                                    <h6 class="form-section-title">Medicine Schedules</h6>
+                                    <button type="button" class="btn" id="addScheduleBtn">
+                                        <i class="fas fa-plus me-2"></i>Add Medicine Schedule
+                                    </button>
+                                </div>
+                                <div id="schedulesList">
+                                    <!-- Schedule entries will be added here dynamically -->
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="savePatientBtn">Save Patient</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Patient Cards -->
+        <div class="row">
+            <div class="col-md-6 mb-4" th:each="patient : ${patients}">
+                <div class="patient-card">
+                    <div class="patient-header d-flex justify-content-between align-items-center">
+                        <h3 th:text="${patient.name}">Patient Name</h3>
+                        <div class="action-buttons">
+                            <button class="btn btn-success btn-sm">
+                                <i class="fas fa-file-export"></i> Export
+                            </button>
+                            <button class="btn btn-danger btn-sm">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                            <button class="btn btn-primary btn-sm">
+                                <i class="fas fa-edit"></i> Edit
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <strong>Patient Name</strong>
+                                <p th:text="${patient.name}">Patient Name</p>
+                            </div>
+                            <div class="col-md-4">
+                                <strong>Device ID</strong>
+                                <p th:text="${patient.deviceId != null ? patient.deviceId : 'Not Assigned'}">Not Assigned</p>
+                            </div>
+                            <div class="col-md-4">
+                                <strong>No. of Reminders</strong>
+                                <span class="badge bg-primary rounded-pill" th:text="${#lists.size(patient.medicineSchedules)}">0</span>
+                            </div>
+                        </div>
+
+                        <div class="medicine-schedules">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Medicine Schedules</h5>
+                                    <div th:if="${not #lists.isEmpty(patient.medicineSchedules)}">
+                                        <table class="table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Medicine</th>
+                                                    <th>Dosage</th>
+                                                    <th>Time</th>
+                                                    <th>Day</th>
+                                                    <th>Reminder</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr th:each="schedule : ${patient.medicineSchedules}">
+                                                    <td th:text="${schedule.medicine.medicineName}">Medicine Name</td>
+                                                    <td th:text="${schedule.medicine.dosage}">Dosage</td>
+                                                    <td th:text="${#temporals.format(schedule.time, 'HH:mm')}">Time</td>
+                                                    <td th:text="${schedule.dayOfWeek}">Day</td>
+                                                    <td>
+                                                        <span th:if="${schedule.active}" class="badge bg-success">Enabled</span>
+                                                        <span th:unless="${schedule.active}" class="badge bg-secondary">Disabled</span>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div th:if="${#lists.isEmpty(patient.medicineSchedules)}">
+                                        <p class="text-muted">No medicine schedules found</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Template for schedule entry
+        const scheduleTemplate = `
+            <div class="schedule-entry">
+                <div class="row">
+                    <div class="medicine-name-col">
+                        <input type="text" class="form-control" name="medicineSchedules[].medicineName" placeholder="Medicine Name" required>
+                    </div>
+                    <div class="dosage-col">
+                        <input type="text" class="form-control" name="medicineSchedules[].dosage" placeholder="Dosage" required>
+                    </div>
+                    <div class="days-col">
+                        <div class="days-dropdown">
+                            <button class="btn btn-outline-secondary dropdown-toggle w-100" type="button" data-bs-toggle="collapse">
+                                Select Days <span class="selected-days-count"></span>
+                            </button>
+                            <div class="collapse">
+                                <div class="days-menu">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="MONDAY" name="medicineSchedules[].daysOfWeek">
+                                        <label class="form-check-label">Monday</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="TUESDAY" name="medicineSchedules[].daysOfWeek">
+                                        <label class="form-check-label">Tuesday</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="WEDNESDAY" name="medicineSchedules[].daysOfWeek">
+                                        <label class="form-check-label">Wednesday</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="THURSDAY" name="medicineSchedules[].daysOfWeek">
+                                        <label class="form-check-label">Thursday</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="FRIDAY" name="medicineSchedules[].daysOfWeek">
+                                        <label class="form-check-label">Friday</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="SATURDAY" name="medicineSchedules[].daysOfWeek">
+                                        <label class="form-check-label">Saturday</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="SUNDAY" name="medicineSchedules[].daysOfWeek">
+                                        <label class="form-check-label">Sunday</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="time-col">
+                        <input type="time" class="form-control" name="medicineSchedules[].time" required>
+                    </div>
+                    <div class="reminder-col">
+                        <div class="reminder-group">
+                            <button type="button" class="btn reminder-decrease">-</button>
+                            <input type="number" class="form-control reminder-input" name="medicineSchedules[].reminderMinutesBefore" value="10" min="5" max="120" step="1" required>
+                            <button type="button" class="btn reminder-increase">+</button>
+                        </div>
+                    </div>
+                    <div class="delete-col">
+                        <button type="button" class="btn btn-danger remove-schedule">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Function to update reminder counter
+        function updateReminderCounter() {
+            const scheduleEntries = document.querySelectorAll('.schedule-entry');
+            const totalReminders = scheduleEntries.length;
+            document.getElementById('reminderCounter').textContent = `Total Reminders: ${totalReminders}`;
+        }
+
+        // Modify the existing addScheduleBtn event listener
+        document.getElementById('addScheduleBtn').addEventListener('click', function() {
+            const schedulesList = document.getElementById('schedulesList');
+            const newSchedule = document.createElement('div');
+            newSchedule.innerHTML = scheduleTemplate;
+            
+            const entry = newSchedule.firstElementChild;
+            initializeDaysDropdown(entry);
+            initializeReminderControls(entry);
+            
+            schedulesList.appendChild(entry);
+            updateReminderCounter(); // Update counter when adding new schedule
+        });
+
+        // Modify the existing remove schedule event listener
+        document.addEventListener('click', function(e) {
+            const removeButton = e.target.closest('.remove-schedule');
+            if (removeButton) {
+                if (confirm('Are you sure you want to remove this medicine schedule?')) {
+                    const scheduleEntry = removeButton.closest('.schedule-entry');
+                    if (scheduleEntry) {
+                        scheduleEntry.remove();
+                        updateReminderCounter(); // Update counter when removing schedule
+                    }
+                }
+            }
+        });
+
+        // Initialize reminder counter when modal is shown
+        document.getElementById('addPatientModal').addEventListener('show.bs.modal', function() {
+            updateReminderCounter();
+        });
+
+        // Initialize days dropdown functionality
+        function initializeDaysDropdown(entry) {
+            const dropdownButton = entry.querySelector('.dropdown-toggle');
+            const dropdownContent = entry.querySelector('.days-dropdown .collapse');
+            const checkboxes = entry.querySelectorAll('[name="medicineSchedules[].daysOfWeek"]');
+
+            // Generate unique IDs for collapse functionality
+            const uniqueId = 'days-' + Math.random().toString(36).substr(2, 9);
+            dropdownContent.id = uniqueId;
+            dropdownButton.setAttribute('data-bs-target', '#' + uniqueId);
+
+            // Update selected days count
+            function updateSelectedCount() {
+                const count = Array.from(checkboxes).filter(cb => cb.checked).length;
+                if (count > 0) {
+                    dropdownButton.textContent = `${count} days selected`;
+                } else {
+                    dropdownButton.innerHTML = 'Select Days <span class="selected-days-count"></span>';
+                }
+            }
+
+            // Add change event listeners to checkboxes
+            checkboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', updateSelectedCount);
+            });
+
+            // Initialize collapse functionality
+            new bootstrap.Collapse(dropdownContent, {
+                toggle: false
+            });
+
+            // Add click event listener to the button
+            dropdownButton.addEventListener('click', function(event) {
+                event.preventDefault();
+                const bsCollapse = bootstrap.Collapse.getInstance(dropdownContent);
+                if (bsCollapse) {
+                    bsCollapse.toggle();
+                }
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(event) {
+                if (!entry.contains(event.target)) {
+                    const bsCollapse = bootstrap.Collapse.getInstance(dropdownContent);
+                    if (bsCollapse) bsCollapse.hide();
+                }
+            });
+        }
+
+        function initializeReminderControls(entry) {
+            const reminderInput = entry.querySelector('.reminder-input');
+            const decreaseBtn = entry.querySelector('.reminder-decrease');
+            const increaseBtn = entry.querySelector('.reminder-increase');
+            
+            function updateValue(increment) {
+                let value = parseInt(reminderInput.value) || 10;
+                value = Math.min(Math.max(value + increment, 5), 120);
+                reminderInput.value = value;
+            }
+            
+            decreaseBtn.addEventListener('click', () => updateValue(-1));
+            increaseBtn.addEventListener('click', () => updateValue(1));
+            
+            reminderInput.addEventListener('change', () => {
+                let value = parseInt(reminderInput.value) || 10;
+                value = Math.min(Math.max(value, 5), 120);
+                reminderInput.value = value;
+            });
+        }
+
+        // Add save patient functionality
+        document.getElementById('savePatientBtn').addEventListener('click', async function() {
+            const patientName = document.getElementById('patientName').value.trim();
+            const deviceId = document.getElementById('deviceId').value.trim();
+            
+            if (!patientName) {
+                alert('Please enter patient name');
+                return;
+            }
+
+            const scheduleEntries = document.querySelectorAll('.schedule-entry');
+            if (scheduleEntries.length === 0) {
+                alert('Please add at least one medicine schedule');
+                return;
+            }
+
+            try {
+                const medicineSchedules = Array.from(scheduleEntries).map(entry => {
+                    const medicineName = entry.querySelector('[name="medicineSchedules[].medicineName"]').value.trim();
+                    const time = entry.querySelector('[name="medicineSchedules[].time"]').value;
+                    const reminderMinutesBefore = parseInt(entry.querySelector('[name="medicineSchedules[].reminderMinutesBefore"]').value);
+                    const reminder = true; // Always enable reminders
+                    
+                    const selectedDays = Array.from(entry.querySelectorAll('[name="medicineSchedules[].daysOfWeek"]:checked'))
+                        .map(checkbox => checkbox.value);
+
+                    if (!medicineName || !time || selectedDays.length === 0) {
+                        throw new Error('Please fill in all required fields for each medicine schedule');
+                    }
+
+                    return {
+                        medicineName,
+                        daysOfWeek: selectedDays,
+                        time,
+                        reminderMinutesBefore,
+                        reminder
+                    };
+                });
+
+                const response = await fetch('/api/patients/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-XSRF-TOKEN': document.cookie.split('; ')
+                            .find(row => row.startsWith('XSRF-TOKEN='))
+                            ?.split('=')[1]
+                    },
+                    body: JSON.stringify({
+                        name: patientName,
+                        deviceId: deviceId,
+                        medicineSchedules: medicineSchedules
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to save patient');
+                }
+
+                window.location.reload();
+            } catch (error) {
+                console.error('Error saving patient:', error);
+                alert(error.message || 'An unknown error occurred');
+            }
+        });
+    </script>
+</body>
+</html> 
