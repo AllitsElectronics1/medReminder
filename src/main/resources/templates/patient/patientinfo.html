@@ -892,7 +892,7 @@
                                                     <td th:text="${#temporals.format(schedule.time, 'HH:mm')}">Time</td>
                                                     <td th:text="${schedule.dayOfWeek}">Day</td>
                                                     <td>
-                                                        <span th:if="${schedule.active}" class="badge bg-success">Enabled</span>
+                                                        <span th:if="${schedule.active}" th:text="${schedule.reminderMinutesBefore + ' mins before'}">30 mins before</span>
                                                         <span th:unless="${schedule.active}" class="badge bg-secondary">Disabled</span>
                                                     </td>
                                                 </tr>
@@ -1110,23 +1110,23 @@
             try {
                 const medicineSchedules = Array.from(scheduleEntries).map(entry => {
                     const medicineName = entry.querySelector('[name="medicineSchedules[].medicineName"]').value.trim();
+                    const dosage = entry.querySelector('[name="medicineSchedules[].dosage"]').value.trim();
                     const time = entry.querySelector('[name="medicineSchedules[].time"]').value;
                     const reminderMinutesBefore = parseInt(entry.querySelector('[name="medicineSchedules[].reminderMinutesBefore"]').value);
-                    const reminder = true; // Always enable reminders
                     
                     const selectedDays = Array.from(entry.querySelectorAll('[name="medicineSchedules[].daysOfWeek"]:checked'))
                         .map(checkbox => checkbox.value);
 
-                    if (!medicineName || !time || selectedDays.length === 0) {
+                    if (!medicineName || !dosage || !time || selectedDays.length === 0) {
                         throw new Error('Please fill in all required fields for each medicine schedule');
                     }
 
                     return {
                         medicineName,
+                        dosage,
                         daysOfWeek: selectedDays,
                         time,
-                        reminderMinutesBefore,
-                        reminder
+                        reminderMinutesBefore
                     };
                 });
 

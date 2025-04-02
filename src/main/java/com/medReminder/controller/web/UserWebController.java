@@ -17,13 +17,13 @@ public class UserWebController {
     
     private final UserService userService;
     
-    @GetMapping("/register")
+    @GetMapping("/user/register")
     public String showRegistrationForm(Model model) {
         model.addAttribute("user", new User());
         return "user/register";
     }
     
-    @PostMapping("/register")
+    @PostMapping("/user/register")
     public String registerUser(@Valid @ModelAttribute("user") User user, 
                              BindingResult result) {
         if (result.hasErrors()) {
@@ -31,7 +31,7 @@ public class UserWebController {
         }
         
         userService.createUser(user);
-        return "redirect:/user/login";
+        return "redirect:/login";
     }
 
     @GetMapping("/user/login")

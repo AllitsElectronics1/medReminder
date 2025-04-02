@@ -4,6 +4,7 @@ import com.medReminder.dto.PatientCreationRequest;
 import com.medReminder.entity.Patient;
 import com.medReminder.entity.Medicine;
 import com.medReminder.entity.MedicineSchedule;
+import com.medReminder.entity.User;
 import com.medReminder.repository.PatientRepository;
 import com.medReminder.repository.MedicineRepository;
 import com.medReminder.repository.MedicineScheduleRepository;
@@ -79,10 +80,16 @@ public class PatientServiceImpl implements PatientService {
     public Patient createPatient(PatientCreationRequest request) {
         log.debug("Creating new patient with {} medicine schedules", request.getMedicineSchedules().size());
         
+        // Get current user
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User currentUser = userService.findByEmail(email)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+        
         // Create and save patient
         Patient patient = new Patient();
         patient.setName(request.getName());
         patient.setDeviceId(request.getDeviceId());
+        patient.setUser(currentUser);
         patient = patientRepository.save(patient);
 
         // Process each medicine schedule
@@ -93,6 +100,7 @@ public class PatientServiceImpl implements PatientService {
             medicine.setDosage(scheduleDTO.getDosage());
             medicine.setPatient(patient);
             medicine.setStartDate(LocalDate.now());
+            medicine.setDosage(scheduleDTO.getDosage());
             medicine = medicineRepository.save(medicine);
 
             // Create schedule for each selected day
