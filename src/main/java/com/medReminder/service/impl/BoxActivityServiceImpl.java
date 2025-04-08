@@ -37,4 +37,9 @@ public class BoxActivityServiceImpl implements BoxActivityService {
         // TODO: Implement repository logic
         return null;
     }
+
+    @Override
+    public void deleteActivity(Long id) {
+        // TODO: Implement repository logic
+    }
 } 

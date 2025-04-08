@@ -1,7 +1,6 @@
 package com.medReminder.controller;
 
 import com.medReminder.entity.Patient;
-import com.medReminder.entity.MedicineSchedule;
 import com.medReminder.entity.Medicine;
 import com.medReminder.service.PatientService;
 import com.medReminder.dto.PatientCreationRequest;

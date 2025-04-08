@@ -10,4 +10,5 @@ public interface BoxActivityService {
     List<BoxActivity> getActivitiesByDeviceId(Long deviceId);
     List<BoxActivity> getActivitiesByDateRange(Long deviceId, LocalDateTime startDate, LocalDateTime endDate);
     BoxActivity recordBoxClose(Long id);
+    void deleteActivity(Long id);
 } 

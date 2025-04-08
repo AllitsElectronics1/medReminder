@@ -5,11 +5,19 @@ import com.medReminder.entity.Patient;
 import com.medReminder.entity.Medicine;
 import com.medReminder.entity.MedicineSchedule;
 import com.medReminder.entity.User;
+import com.medReminder.entity.Device;
+import com.medReminder.entity.BoxActivity;
+import com.medReminder.entity.Report;
+import com.medReminder.entity.Reminder;
 import com.medReminder.repository.PatientRepository;
 import com.medReminder.repository.MedicineRepository;
 import com.medReminder.repository.MedicineScheduleRepository;
 import com.medReminder.service.PatientService;
 import com.medReminder.service.UserService;
+import com.medReminder.service.DeviceService;
+import com.medReminder.service.ReportService;
+import com.medReminder.service.BoxActivityService;
+import com.medReminder.service.ReminderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -30,6 +38,10 @@ public class PatientServiceImpl implements PatientService {
     private final MedicineRepository medicineRepository;
     private final MedicineScheduleRepository medicineScheduleRepository;
     private final UserService userService;
+    private final DeviceService deviceService;
+    private final ReportService reportService;
+    private final BoxActivityService boxActivityService;
+    private final ReminderService reminderService;
 
     @Override
     @Transactional(readOnly = true)
@@ -71,8 +83,57 @@ public class PatientServiceImpl implements PatientService {
     }
 
     @Override
+    @Transactional
     public void deletePatient(Long id) {
-        patientRepository.deleteById(id);
+        log.info("Deleting patient with ID: {}", id);
+        
+        // Get the patient first to check existence
+        Patient patient = patientRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Patient not found with id: " + id));
+
+        // Delete associated device and its activities
+        Device device = deviceService.getDeviceByPatientId(id);
+        if (device != null) {
+            // Delete box activities
+            List<BoxActivity> activities = boxActivityService.getActivitiesByDeviceId(device.getDeviceId());
+            if (activities != null) {
+                activities.forEach(activity -> boxActivityService.deleteActivity(activity.getActivityId()));
+            }
+            
+            // Delete device
+            deviceService.deleteDevice(device.getDeviceId());
+        }
+
+        // Delete medicine schedules and their reminders
+        List<MedicineSchedule> schedules = medicineScheduleRepository.findByPatientId(id);
+        if (schedules != null) {
+            for (MedicineSchedule schedule : schedules) {
+                // Delete associated reminders
+                List<Reminder> reminders = reminderService.getRemindersByScheduleId(schedule.getId());
+                if (reminders != null) {
+                    reminders.forEach(reminder -> reminderService.deleteReminder(reminder.getReminderId()));
+                }
+                
+                // Delete the schedule
+                medicineScheduleRepository.delete(schedule);
+            }
+        }
+
+        // Delete medicines
+        List<Medicine> medicines = medicineRepository.findByPatientId(id);
+        if (medicines != null) {
+            medicines.forEach(medicine -> medicineRepository.delete(medicine));
+        }
+
+        // Delete reports
+        List<Report> reports = reportService.getReportsByPatientId(id);
+        if (reports != null) {
+            reports.forEach(report -> reportService.deleteReport(report.getReportId()));
+        }
+
+        // Finally, delete the patient
+        patientRepository.delete(patient);
+        log.info("Successfully deleted patient with ID: {}", id);
     }
 
     @Override
