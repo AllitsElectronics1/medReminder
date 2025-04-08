@@ -11,4 +11,5 @@ public interface PatientService {
     Patient getPatientById(Long id);
     void deletePatient(Long id);
     List<Patient> getPatientsForCurrentUser();
+    Patient updatePatient(Long id, PatientCreationRequest request);
 } 

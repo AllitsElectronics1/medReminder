@@ -837,6 +837,59 @@
             </div>
         </div>
 
+        <!-- Edit Patient Modal -->
+        <div class="modal fade" id="editPatientModal" tabindex="-1" aria-labelledby="editPatientModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editPatientModalLabel">Edit Patient</h5>
+                        <div class="d-flex align-items-center">
+                            <span id="editReminderCounter">Total Reminders: 0</span>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                    </div>
+                    <div class="modal-body">
+                        <form id="editPatientForm">
+                            <input type="hidden" id="editPatientId">
+                            <!-- Patient Details Section -->
+                            <div class="form-section">
+                                <div class="form-section-header">
+                                    <h6 class="form-section-title">Patient Information</h6>
+                                </div>
+                                <div class="row g-4">
+                                    <div class="col-md-6">
+                                        <label for="editPatientName" class="form-label">Patient Name</label>
+                                        <input type="text" class="form-control" id="editPatientName" name="name" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="editDeviceId" class="form-label">Device ID</label>
+                                        <input type="text" class="form-control" id="editDeviceId" name="deviceId">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Medicine Schedules Section -->
+                            <div class="form-section">
+                                <div class="form-section-header">
+                                    <h6 class="form-section-title">Medicine Schedules</h6>
+                                    <button type="button" class="btn" id="editAddScheduleBtn">
+                                        <i class="fas fa-plus me-2"></i>Add Medicine Schedule
+                                    </button>
+                                </div>
+                                <div id="editSchedulesList">
+                                    <!-- Schedule entries will be added here dynamically -->
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="updatePatientBtn">Update Patient</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Patient Cards -->
         <div class="row">
             <div class="col-md-6 mb-4" th:each="patient : ${patients}">
@@ -1037,11 +1090,8 @@
             // Update selected days count
             function updateSelectedCount() {
                 const count = Array.from(checkboxes).filter(cb => cb.checked).length;
-                if (count > 0) {
-                    dropdownButton.textContent = `${count} days selected`;
-                } else {
-                    dropdownButton.innerHTML = 'Select Days <span class="selected-days-count"></span>';
-                }
+                const selectedDaysText = count > 0 ? `${count} days selected` : 'Select Days';
+                dropdownButton.innerHTML = `${selectedDaysText} <span class="selected-days-count"></span>`;
             }
 
             // Add change event listeners to checkboxes
@@ -1070,6 +1120,9 @@
                     if (bsCollapse) bsCollapse.hide();
                 }
             });
+
+            // Initial update of selected count
+            updateSelectedCount();
         }
 
         function initializeReminderControls(entry) {
@@ -1205,6 +1258,179 @@
                 alert('Failed to delete patient. Please try again.');
             }
         }
+
+        // Edit patient functionality
+        document.addEventListener('click', function(e) {
+            const editButton = e.target.closest('.btn-primary');
+            if (editButton && editButton.closest('.action-buttons')) {
+                const patientCard = editButton.closest('.patient-card');
+                const patientId = patientCard.getAttribute('data-patient-id');
+                const patientName = patientCard.querySelector('h3').textContent;
+                const deviceId = patientCard.querySelector('p:nth-child(2)').textContent;
+                
+                // Set patient details in the edit form
+                document.getElementById('editPatientId').value = patientId;
+                document.getElementById('editPatientName').value = patientName;
+                document.getElementById('editDeviceId').value = deviceId === 'Not Assigned' ? '' : deviceId;
+                
+                // Clear existing schedules
+                document.getElementById('editSchedulesList').innerHTML = '';
+                
+                // Load existing schedules
+                const scheduleRows = patientCard.querySelectorAll('tbody tr');
+                const schedulesByMedicine = {};
+                
+                // Group schedules by medicine name
+                scheduleRows.forEach(row => {
+                    const medicineName = row.cells[0].textContent;
+                    const dosage = row.cells[1].textContent;
+                    const time = row.cells[2].textContent;
+                    const day = row.cells[3].textContent;
+                    const reminderMinutes = parseInt(row.cells[4].textContent.match(/\d+/)[0]);
+                    
+                    if (!schedulesByMedicine[medicineName]) {
+                        schedulesByMedicine[medicineName] = {
+                            medicineName,
+                            dosage,
+                            time,
+                            days: [],
+                            reminderMinutes
+                        };
+                    }
+                    schedulesByMedicine[medicineName].days.push(day);
+                });
+                
+                // Create schedule entries for each medicine
+                Object.values(schedulesByMedicine).forEach(schedule => {
+                    addEditScheduleEntry(
+                        schedule.medicineName,
+                        schedule.dosage,
+                        schedule.time,
+                        schedule.days,
+                        schedule.reminderMinutes
+                    );
+                });
+                
+                // Show the edit modal
+                const editModal = new bootstrap.Modal(document.getElementById('editPatientModal'));
+                editModal.show();
+            }
+        });
+
+        function addEditScheduleEntry(medicineName, dosage, time, days, reminderMinutes) {
+            const schedulesList = document.getElementById('editSchedulesList');
+            const newSchedule = document.createElement('div');
+            newSchedule.innerHTML = scheduleTemplate;
+            
+            const entry = newSchedule.firstElementChild;
+            entry.querySelector('[name="medicineSchedules[].medicineName"]').value = medicineName;
+            entry.querySelector('[name="medicineSchedules[].dosage"]').value = dosage;
+            entry.querySelector('[name="medicineSchedules[].time"]').value = time;
+            entry.querySelector('[name="medicineSchedules[].reminderMinutesBefore"]').value = reminderMinutes;
+            
+            // Set the day checkboxes
+            days.forEach(day => {
+                const dayCheckbox = entry.querySelector(`[value="${day}"]`);
+                if (dayCheckbox) {
+                    dayCheckbox.checked = true;
+                }
+            });
+            
+            initializeDaysDropdown(entry);
+            initializeReminderControls(entry);
+            
+            schedulesList.appendChild(entry);
+            updateEditReminderCounter();
+        }
+
+        function updateEditReminderCounter() {
+            const scheduleEntries = document.querySelectorAll('#editSchedulesList .schedule-entry');
+            const totalReminders = scheduleEntries.length;
+            document.getElementById('editReminderCounter').textContent = `Total Reminders: ${totalReminders}`;
+        }
+
+        document.getElementById('editAddScheduleBtn').addEventListener('click', function() {
+            const schedulesList = document.getElementById('editSchedulesList');
+            const newSchedule = document.createElement('div');
+            newSchedule.innerHTML = scheduleTemplate;
+            
+            const entry = newSchedule.firstElementChild;
+            initializeDaysDropdown(entry);
+            initializeReminderControls(entry);
+            
+            schedulesList.appendChild(entry);
+            updateEditReminderCounter();
+        });
+
+        document.getElementById('updatePatientBtn').addEventListener('click', async function() {
+            const patientId = document.getElementById('editPatientId').value;
+            const patientName = document.getElementById('editPatientName').value.trim();
+            const deviceId = document.getElementById('editDeviceId').value.trim();
+            
+            if (!patientName) {
+                alert('Please enter patient name');
+                return;
+            }
+
+            const scheduleEntries = document.querySelectorAll('#editSchedulesList .schedule-entry');
+            if (scheduleEntries.length === 0) {
+                alert('Please add at least one medicine schedule');
+                return;
+            }
+
+            try {
+                const medicineSchedules = Array.from(scheduleEntries).map(entry => {
+                    const medicineName = entry.querySelector('[name="medicineSchedules[].medicineName"]').value.trim();
+                    const dosage = entry.querySelector('[name="medicineSchedules[].dosage"]').value.trim();
+                    const time = entry.querySelector('[name="medicineSchedules[].time"]').value;
+                    const reminderMinutesBefore = parseInt(entry.querySelector('[name="medicineSchedules[].reminderMinutesBefore"]').value);
+                    
+                    const selectedDays = Array.from(entry.querySelectorAll('[name="medicineSchedules[].daysOfWeek"]:checked'))
+                        .map(checkbox => checkbox.value);
+
+                    if (!medicineName || !dosage || !time || selectedDays.length === 0) {
+                        throw new Error('Please fill in all required fields for each medicine schedule');
+                    }
+
+                    return {
+                        medicineName,
+                        dosage,
+                        daysOfWeek: selectedDays,
+                        time,
+                        reminderMinutesBefore
+                    };
+                });
+
+                const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+                const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+
+                const response = await fetch(`/api/patients/${patientId}/update`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        [csrfHeader]: csrfToken
+                    },
+                    body: JSON.stringify({
+                        name: patientName,
+                        deviceId: deviceId,
+                        medicineSchedules: medicineSchedules
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to update patient');
+                }
+
+                // Close the modal and reload the page
+                const editModal = bootstrap.Modal.getInstance(document.getElementById('editPatientModal'));
+                editModal.hide();
+                window.location.reload();
+            } catch (error) {
+                console.error('Error updating patient:', error);
+                alert(error.message || 'An unknown error occurred');
+            }
+        });
     </script>
 </body>
 </html> 

@@ -185,4 +185,63 @@ public class PatientServiceImpl implements PatientService {
     public List<Patient> getAllPatients() {
         return patientRepository.findAll();
     }
+
+    @Override
+    @Transactional
+    public Patient updatePatient(Long id, PatientCreationRequest request) {
+        log.info("Updating patient with ID: {}", id);
+        
+        // Get existing patient
+        Patient patient = patientRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Patient not found with id: " + id));
+
+        // Update basic patient info
+        patient.setName(request.getName());
+        patient.setDeviceId(request.getDeviceId());
+        patient = patientRepository.save(patient);
+
+        // Delete existing medicine schedules and medicines
+        List<MedicineSchedule> existingSchedules = medicineScheduleRepository.findByPatientId(id);
+        if (existingSchedules != null) {
+            for (MedicineSchedule schedule : existingSchedules) {
+                // Delete associated reminders
+                List<Reminder> reminders = reminderService.getRemindersByScheduleId(schedule.getId());
+                if (reminders != null) {
+                    reminders.forEach(reminder -> reminderService.deleteReminder(reminder.getReminderId()));
+                }
+                medicineScheduleRepository.delete(schedule);
+            }
+        }
+
+        List<Medicine> existingMedicines = medicineRepository.findByPatientId(id);
+        if (existingMedicines != null) {
+            existingMedicines.forEach(medicine -> medicineRepository.delete(medicine));
+        }
+
+        // Create new medicine schedules
+        for (PatientCreationRequest.MedicineScheduleDTO scheduleDTO : request.getMedicineSchedules()) {
+            // Create and save medicine
+            Medicine medicine = new Medicine();
+            medicine.setMedicineName(scheduleDTO.getMedicineName());
+            medicine.setDosage(scheduleDTO.getDosage());
+            medicine.setPatient(patient);
+            medicine.setStartDate(LocalDate.now());
+            medicine = medicineRepository.save(medicine);
+
+            // Create schedule for each selected day
+            for (DayOfWeek dayOfWeek : scheduleDTO.getDaysOfWeek()) {
+                MedicineSchedule schedule = new MedicineSchedule();
+                schedule.setMedicine(medicine);
+                schedule.setPatient(patient);
+                schedule.setDayOfWeek(dayOfWeek);
+                schedule.setTime(scheduleDTO.getTime());
+                schedule.setReminderMinutesBefore(scheduleDTO.getReminderMinutesBefore());
+                schedule.setActive(true);
+                medicineScheduleRepository.save(schedule);
+            }
+        }
+
+        log.info("Successfully updated patient with ID: {}", id);
+        return patientRepository.findById(id).orElseThrow();
+    }
 } 
