@@ -761,6 +761,54 @@
         .modal-header .btn-danger i {
             font-size: 0.875rem;
         }
+
+        /* Collapsible section styles */
+        .medicine-schedules .card {
+            border: 1px solid rgba(0, 0, 0, 0.125);
+            border-radius: 0.5rem;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        }
+        
+        .medicine-schedules .card-body {
+            padding: 1.25rem;
+        }
+        
+        .medicine-schedules .btn-link {
+            color: #6c757d;
+            text-decoration: none;
+            transition: transform 0.2s ease;
+        }
+        
+        .medicine-schedules .btn-link:hover {
+            color: #495057;
+        }
+        
+        .medicine-schedules .btn-link i {
+            transition: transform 0.2s ease;
+        }
+        
+        .medicine-schedules .btn-link[aria-expanded="false"] i {
+            transform: rotate(-90deg);
+        }
+        
+        .medicine-schedules .table {
+            margin-bottom: 0;
+        }
+        
+        .medicine-schedules .table th {
+            background-color: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+            font-weight: 600;
+        }
+        
+        .medicine-schedules .table td {
+            vertical-align: middle;
+        }
+        
+        .medicine-schedules .badge {
+            font-size: 0.875rem;
+            padding: 0.35em 0.65em;
+        }
     </style>
 </head>
 <body>
@@ -928,34 +976,45 @@
                         <div class="medicine-schedules">
                             <div class="card">
                                 <div class="card-body">
-                                    <h5 class="card-title">Medicine Schedules</h5>
-                                    <div th:if="${not #lists.isEmpty(patient.medicineSchedules)}">
-                                        <table class="table">
-                                            <thead>
-                                                <tr>
-                                                    <th>Medicine</th>
-                                                    <th>Dosage</th>
-                                                    <th>Time</th>
-                                                    <th>Day</th>
-                                                    <th>Reminder</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <tr th:each="schedule : ${patient.medicineSchedules}">
-                                                    <td th:text="${schedule.medicine.medicineName}">Medicine Name</td>
-                                                    <td th:text="${schedule.medicine.dosage}">Dosage</td>
-                                                    <td th:text="${#temporals.format(schedule.time, 'HH:mm')}">Time</td>
-                                                    <td th:text="${schedule.dayOfWeek}">Day</td>
-                                                    <td>
-                                                        <span th:if="${schedule.active}" th:text="${schedule.reminderMinutesBefore + ' mins before'}">30 mins before</span>
-                                                        <span th:unless="${schedule.active}" class="badge bg-secondary">Disabled</span>
-                                                    </td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h5 class="card-title mb-0">Medicine Schedules</h5>
+                                        <button class="btn btn-link p-0" type="button" 
+                                            th:attr="data-bs-toggle='collapse', 
+                                                    data-bs-target='#schedulesTable-' + ${patient.id}, 
+                                                    aria-expanded='false', 
+                                                    aria-controls='schedulesTable-' + ${patient.id}">
+                                            <i class="fas fa-chevron-down"></i>
+                                        </button>
                                     </div>
-                                    <div th:if="${#lists.isEmpty(patient.medicineSchedules)}">
-                                        <p class="text-muted">No medicine schedules found</p>
+                                    <div class="collapse" th:id="'schedulesTable-' + ${patient.id}">
+                                        <div th:if="${not #lists.isEmpty(patient.medicineSchedules)}">
+                                            <table class="table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Medicine</th>
+                                                        <th>Dosage</th>
+                                                        <th>Time</th>
+                                                        <th>Day</th>
+                                                        <th>Reminder</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr th:each="schedule : ${patient.medicineSchedules}">
+                                                        <td th:text="${schedule.medicine.medicineName}">Medicine Name</td>
+                                                        <td th:text="${schedule.medicine.dosage}">Dosage</td>
+                                                        <td th:text="${#temporals.format(schedule.time, 'HH:mm')}">Time</td>
+                                                        <td th:text="${schedule.dayOfWeek}">Day</td>
+                                                        <td>
+                                                            <span th:if="${schedule.active}" th:text="${schedule.reminderMinutesBefore + ' mins before'}">30 mins before</span>
+                                                            <span th:unless="${schedule.active}" class="badge bg-secondary">Disabled</span>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <div th:if="${#lists.isEmpty(patient.medicineSchedules)}">
+                                            <p class="text-muted">No medicine schedules found</p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
