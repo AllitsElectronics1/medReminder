@@ -19,10 +19,27 @@ public class SecurityConfig {
         http
             .csrf(csrf -> csrf
                 .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                .ignoringRequestMatchers("/api/patients/create") // Temporarily disable CSRF for this endpoint
+                .ignoringRequestMatchers(
+                    "/api/devices/update-ip",
+                    "/api/patients/create",
+                    "/v3/api-docs/**",
+                    "/swagger-ui/**",
+                    "/swagger-ui.html"
+                )
             )
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/user/register", "/css/**", "/js/**", "/images/**").permitAll()
+                .requestMatchers(
+                    "/api/devices/update-ip",
+                    "/v3/api-docs/**",
+                    "/swagger-ui/**",
+                    "/swagger-ui.html",
+                    "/",
+                    "/user/login",
+                    "/user/register",
+                    "/css/**",
+                    "/js/**",
+                    "/images/**"
+                ).permitAll()
                 .anyRequest().authenticated()
             )
             .formLogin(form -> form

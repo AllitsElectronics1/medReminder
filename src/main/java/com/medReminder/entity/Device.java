@@ -32,6 +32,10 @@ public class Device {
     @Column(nullable = false)
     private DeviceStatus status;
 
+    private String ipAddress;
+
+    private String macAddress;
+
     @OneToMany(mappedBy = "device", cascade = CascadeType.ALL)
     private Set<BoxActivity> activities = new HashSet<>();
 } 

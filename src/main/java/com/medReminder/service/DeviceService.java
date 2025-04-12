@@ -9,4 +9,5 @@ public interface DeviceService {
     Device updateDevice(Long id, Device device);
     Device updateDeviceStatus(Long id, String status);
     void deleteDevice(Long id);
+    Device updateDeviceIpAddress(String deviceId, String ipAddress);
 } 

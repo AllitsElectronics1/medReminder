@@ -2,6 +2,8 @@ package com.medReminder.controller;
 
 import com.medReminder.entity.Device;
 import com.medReminder.service.DeviceService;
+import com.medReminder.dto.DeviceIpUpdateRequest;
+import com.medReminder.dto.DeviceIpUpdateResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -41,5 +43,15 @@ public class DeviceController {
     public ResponseEntity<Void> deleteDevice(@PathVariable Long id) {
         deviceService.deleteDevice(id);
         return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/update-ip")
+    public ResponseEntity<DeviceIpUpdateResponse> updateDeviceIpAddress(@RequestBody DeviceIpUpdateRequest request) {
+        Device device = deviceService.updateDeviceIpAddress(request.getMacAddress(), request.getIpAddress());
+        DeviceIpUpdateResponse response = new DeviceIpUpdateResponse();
+        response.setDeviceSerialNumber(device.getDeviceSerialNumber());
+        response.setIpAddress(device.getIpAddress());
+        response.setStatus(device.getStatus().name());
+        return ResponseEntity.ok(response);
     }
 } 
