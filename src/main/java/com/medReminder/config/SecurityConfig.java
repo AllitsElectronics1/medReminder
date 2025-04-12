@@ -21,6 +21,7 @@ public class SecurityConfig {
                 .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                 .ignoringRequestMatchers(
                     "/api/devices/update-ip",
+                    "/api/devices/updateMedicineStatus",
                     "/api/patients/create",
                     "/v3/api-docs/**",
                     "/swagger-ui/**",
@@ -30,6 +31,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
                     "/api/devices/update-ip",
+                    "/api/devices/updateMedicineStatus",
                     "/v3/api-docs/**",
                     "/swagger-ui/**",
                     "/swagger-ui.html",

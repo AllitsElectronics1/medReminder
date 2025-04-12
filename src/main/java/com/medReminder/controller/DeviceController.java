@@ -2,15 +2,23 @@ package com.medReminder.controller;
 
 import com.medReminder.entity.Device;
 import com.medReminder.service.DeviceService;
+
+import io.micrometer.core.ipc.http.HttpSender.Response;
+
 import com.medReminder.dto.DeviceIpUpdateRequest;
 import com.medReminder.dto.DeviceIpUpdateResponse;
+import com.medReminder.dto.UpdateMedicineStatusRequest;
+import com.medReminder.dto.UpdateMedicineStatusResponse;
+
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/devices")
 @RequiredArgsConstructor
+@Slf4j
 public class DeviceController {
     private final DeviceService deviceService;
 
@@ -54,4 +62,15 @@ public class DeviceController {
         response.setStatus(device.getStatus().name());
         return ResponseEntity.ok(response);
     }
+
+    @PostMapping("/updateMedicineStatus")
+    public ResponseEntity<UpdateMedicineStatusResponse> updateMedicineStatus(@RequestBody UpdateMedicineStatusRequest request) {
+        log.info("Updating medicine status for device: {}", request.getMacAddress());
+        UpdateMedicineStatusResponse response = new UpdateMedicineStatusResponse();
+        response.setMessage("Medicine status updated successfully");
+        response.setStatus("success");
+        return ResponseEntity.ok(response);
+    }
+
+    
 } 
