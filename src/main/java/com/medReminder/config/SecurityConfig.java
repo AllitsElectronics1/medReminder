@@ -22,6 +22,7 @@ public class SecurityConfig {
                 .ignoringRequestMatchers(
                     "/api/devices/update-ip",
                     "/api/devices/updateMedicineStatus",
+                    "/api/devices/send-message",
                     "/api/patients/create",
                     "/v3/api-docs/**",
                     "/swagger-ui/**",
@@ -32,6 +33,7 @@ public class SecurityConfig {
                 .requestMatchers(
                     "/api/devices/update-ip",
                     "/api/devices/updateMedicineStatus",
+                    "/api/devices/send-message",
                     "/v3/api-docs/**",
                     "/swagger-ui/**",
                     "/swagger-ui.html",

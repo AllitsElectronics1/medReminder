@@ -2,6 +2,7 @@ package com.medReminder.controller;
 
 import com.medReminder.entity.Device;
 import com.medReminder.service.DeviceService;
+import com.medReminder.service.DeviceMessageService;
 
 import io.micrometer.core.ipc.http.HttpSender.Response;
 
@@ -9,6 +10,7 @@ import com.medReminder.dto.DeviceIpUpdateRequest;
 import com.medReminder.dto.DeviceIpUpdateResponse;
 import com.medReminder.dto.UpdateMedicineStatusRequest;
 import com.medReminder.dto.UpdateMedicineStatusResponse;
+import com.medReminder.dto.DeviceMessageRequest;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 @Slf4j
 public class DeviceController {
     private final DeviceService deviceService;
+    private final DeviceMessageService deviceMessageService;
 
     @PostMapping
     public ResponseEntity<Device> createDevice(@RequestBody Device device) {
@@ -72,5 +75,10 @@ public class DeviceController {
         return ResponseEntity.ok(response);
     }
 
-    
+    @PostMapping("/send-message")
+    public ResponseEntity<String> sendMessage(@RequestBody DeviceMessageRequest request) {
+        log.info("Sending message to device at IP: {}", request.getIpAddress());
+        deviceMessageService.sendMessage(request);
+        return ResponseEntity.ok("Message sent successfully");
+    }
 } 
