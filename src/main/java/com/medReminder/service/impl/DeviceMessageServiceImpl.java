@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import com.medReminder.dto.DeviceMessageRequestDto;
 
 @Service
 @Slf4j
@@ -19,9 +20,13 @@ public class DeviceMessageServiceImpl implements DeviceMessageService {
             log.info("Sending message to {}: message={}, label={}", 
                 request.getIpAddress(), request.getMessage(), request.getLabel());
             
+            DeviceMessageRequestDto deviceMessageRequestDto = new DeviceMessageRequestDto();
+            deviceMessageRequestDto.setMessage(request.getMessage());
+            deviceMessageRequestDto.setLabel(request.getLabel());
+            
             ResponseEntity<String> response = restTemplate.postForEntity(
                 url, 
-                request, 
+                deviceMessageRequestDto, 
                 String.class
             );
 
