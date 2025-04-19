@@ -7,11 +7,13 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import com.medReminder.dto.DeviceMessageRequestDto;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 @Slf4j
 public class DeviceMessageServiceImpl implements DeviceMessageService {
     private final RestTemplate restTemplate = new RestTemplate();
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
     public void sendMessage(DeviceMessageRequest request) {
@@ -21,8 +23,13 @@ public class DeviceMessageServiceImpl implements DeviceMessageService {
             log.info("Sending message to {}: message={}, label={}", 
                 request.getIpAddress(), request.getMessage(), request.getLabel());
             
-            // Create plain text message
-            String messageText = request.getMessage() + "|" + request.getLabel();
+            // Create DTO object
+            DeviceMessageRequestDto deviceMessageRequestDto = new DeviceMessageRequestDto();
+            deviceMessageRequestDto.setMessage(request.getMessage());
+            deviceMessageRequestDto.setLabel(request.getLabel());
+            
+            // Convert DTO to string format
+            String messageText = objectMapper.writeValueAsString(deviceMessageRequestDto);
             
             // Send request without headers
             ResponseEntity<String> response = restTemplate.postForEntity(
