@@ -16,7 +16,7 @@ public class DeviceMessageServiceImpl implements DeviceMessageService {
     @Override
     public void sendMessage(DeviceMessageRequest request) {
         try {
-            String url = String.format("http://%s/notify/", request.getIpAddress());
+            String url = String.format("http://%s/notify", request.getIpAddress());
             log.info(url);
             log.info("Sending message to {}: message={}, label={}", 
                 request.getIpAddress(), request.getMessage(), request.getLabel());
