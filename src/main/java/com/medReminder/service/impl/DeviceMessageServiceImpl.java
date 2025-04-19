@@ -21,18 +21,13 @@ public class DeviceMessageServiceImpl implements DeviceMessageService {
             log.info("Sending message to {}: message={}, label={}", 
                 request.getIpAddress(), request.getMessage(), request.getLabel());
             
-            // Create headers and set content type to plain text
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.TEXT_PLAIN);
-            
-            // Create the request entity with plain text message
+            // Create plain text message
             String messageText = request.getMessage() + "|" + request.getLabel();
-            HttpEntity<String> requestEntity = new HttpEntity<>(messageText, headers);
             
-            ResponseEntity<String> response = restTemplate.exchange(
+            // Send request without headers
+            ResponseEntity<String> response = restTemplate.postForEntity(
                 url,
-                HttpMethod.POST,
-                requestEntity,
+                messageText,
                 String.class
             );
 
