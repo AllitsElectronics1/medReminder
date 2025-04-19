@@ -3,7 +3,7 @@ package com.medReminder.service.impl;
 import com.medReminder.dto.DeviceMessageRequest;
 import com.medReminder.service.DeviceMessageService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import com.medReminder.dto.DeviceMessageRequestDto;
@@ -16,7 +16,8 @@ public class DeviceMessageServiceImpl implements DeviceMessageService {
     @Override
     public void sendMessage(DeviceMessageRequest request) {
         try {
-            String url = String.format("http://%s/notify", request.getIpAddress());
+            String url = String.format("http://%s/notify/", request.getIpAddress());
+            log.info(url);
             log.info("Sending message to {}: message={}, label={}", 
                 request.getIpAddress(), request.getMessage(), request.getLabel());
             
@@ -24,9 +25,17 @@ public class DeviceMessageServiceImpl implements DeviceMessageService {
             deviceMessageRequestDto.setMessage(request.getMessage());
             deviceMessageRequestDto.setLabel(request.getLabel());
             
-            ResponseEntity<String> response = restTemplate.postForEntity(
-                url, 
-                deviceMessageRequestDto, 
+            // Create headers and set content type to JSON
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            
+            // Create the request entity with headers
+            HttpEntity<DeviceMessageRequestDto> requestEntity = new HttpEntity<>(deviceMessageRequestDto, headers);
+            
+            ResponseEntity<String> response = restTemplate.exchange(
+                url,
+                HttpMethod.POST,
+                requestEntity,
                 String.class
             );
 
