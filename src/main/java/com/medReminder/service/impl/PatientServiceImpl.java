@@ -6,6 +6,7 @@ import com.medReminder.entity.Medicine;
 import com.medReminder.entity.MedicineSchedule;
 import com.medReminder.entity.User;
 import com.medReminder.entity.Device;
+import com.medReminder.entity.DeviceStatus;
 import com.medReminder.entity.BoxActivity;
 import com.medReminder.entity.Report;
 import com.medReminder.entity.Reminder;
@@ -152,6 +153,13 @@ public class PatientServiceImpl implements PatientService {
         patient.setDeviceId(request.getDeviceId());
         patient.setUser(currentUser);
         patient = patientRepository.save(patient);
+
+        Device device = new Device();
+        device.setPatient(patient);
+        device.setDeviceSerialNumber(request.getDeviceId());
+        device.setStatus(DeviceStatus.ACTIVE);
+        device.setDeviceSerialNumber(request.getDeviceId());
+        deviceService.createDevice(device); 
 
         // Process each medicine schedule
         for (PatientCreationRequest.MedicineScheduleDTO scheduleDTO : request.getMedicineSchedules()) {

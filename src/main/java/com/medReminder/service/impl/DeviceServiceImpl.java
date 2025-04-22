@@ -1,11 +1,13 @@
 package com.medReminder.service.impl;
 
 import com.medReminder.entity.Device;
+import com.medReminder.entity.DeviceStatus;
 import com.medReminder.service.DeviceService;
 import com.medReminder.repository.DeviceRepository;
 import com.medReminder.exception.DeviceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -14,8 +16,20 @@ public class DeviceServiceImpl implements DeviceService {
 
     @Override
     public Device createDevice(Device device) {
-        // TODO: Implement repository logic
-        return device;
+        if (device == null) {
+            throw new IllegalArgumentException("Device cannot be null");
+        }
+        
+        // Set default values if not provided
+        if (device.getStatus() == null) {
+            device.setStatus(DeviceStatus.ACTIVE);
+        }
+        
+        if (device.getLastSyncTime() == null) {
+            device.setLastSyncTime(LocalDateTime.now());
+        }
+        
+        return deviceRepository.save(device);
     }
 
     @Override
