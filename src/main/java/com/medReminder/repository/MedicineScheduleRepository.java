@@ -11,4 +11,9 @@ import java.util.List;
 public interface MedicineScheduleRepository extends JpaRepository<MedicineSchedule, Long> {
   List<MedicineSchedule> findByPatientId(Long patientId);
 
+  List<MedicineSchedule> findByPatientIdAndActiveOrderByTimeAsc(Long patientId, boolean active);
+
+  boolean existsByPatientIdAndActiveAndDayOfWeekAndTime(Long patientId, boolean active, java.time.DayOfWeek dayOfWeek, java.time.LocalTime time);
+
+  MedicineSchedule findFirstByPatientIdAndActiveAndDayOfWeekAndTimeAfterOrderByTimeAsc(Long patientId, boolean active, java.time.DayOfWeek dayOfWeek, java.time.LocalTime time);
 } 

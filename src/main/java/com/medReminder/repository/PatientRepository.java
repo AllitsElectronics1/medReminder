@@ -12,4 +12,6 @@ import java.util.List;
 public interface PatientRepository extends JpaRepository<Patient, Long> {
     @Query("SELECT DISTINCT p FROM Patient p LEFT JOIN FETCH p.medicineSchedules s WHERE p.user.email = :email")
     List<Patient> findByUserEmail(@Param("email") String email);
+
+    Patient findByDeviceId(String deviceId);
 }
