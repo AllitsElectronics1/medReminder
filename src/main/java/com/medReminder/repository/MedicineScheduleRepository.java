@@ -16,4 +16,6 @@ public interface MedicineScheduleRepository extends JpaRepository<MedicineSchedu
   boolean existsByPatientIdAndActiveAndDayOfWeekAndTime(Long patientId, boolean active, java.time.DayOfWeek dayOfWeek, java.time.LocalTime time);
 
   MedicineSchedule findFirstByPatientIdAndActiveAndDayOfWeekAndTimeAfterOrderByTimeAsc(Long patientId, boolean active, java.time.DayOfWeek dayOfWeek, java.time.LocalTime time);
+
+  MedicineSchedule findByPatientIdAndActiveAndDayOfWeekAndTime(Long patientId, boolean active, java.time.DayOfWeek dayOfWeek, java.time.LocalTime time);
 } 

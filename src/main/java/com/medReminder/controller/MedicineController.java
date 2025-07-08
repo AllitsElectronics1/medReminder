@@ -66,26 +66,33 @@ public class MedicineController {
         Patient patient = patientRepository.findByDeviceId(deviceId);
         if (patient == null) {
             log.warn("No patient found for deviceId: {}", deviceId);
-            return ResponseEntity.badRequest().body(new MedicineScheduleCheckResponse(false, null));
+            return ResponseEntity.badRequest().body(new MedicineScheduleCheckResponse(false, null, null, null));
         }
         LocalTime now = LocalTime.now().withSecond(0).withNano(0);
         DayOfWeek today = DayOfWeek.from(java.time.LocalDate.now());
         log.info("Checking schedule for patientId: {}, at time: {}, day: {}", patient.getId(), now, today);
-        boolean scheduledNow = medicineScheduleRepository.existsByPatientIdAndActiveAndDayOfWeekAndTime(
+        
+        // Check if there's a medicine scheduled for now
+        MedicineSchedule currentSchedule = medicineScheduleRepository.findByPatientIdAndActiveAndDayOfWeekAndTime(
                 patient.getId(), true, today, now);
-        if (scheduledNow) {
+        
+        if (currentSchedule != null) {
             log.info("Medicine is scheduled for now for patientId: {}", patient.getId());
-            return ResponseEntity.ok(new MedicineScheduleCheckResponse(true, 0L));
+            String message = currentSchedule.getMedicine().getMedicineName();
+            String label = today + " " + now;
+            return ResponseEntity.ok(new MedicineScheduleCheckResponse(true, 0L, message, label));
         } else {
             MedicineSchedule next = medicineScheduleRepository.findFirstByPatientIdAndActiveAndDayOfWeekAndTimeAfterOrderByTimeAsc(
                     patient.getId(), true, today, now);
             if (next != null) {
                 long minutes = java.time.temporal.ChronoUnit.MINUTES.between(now, next.getTime());
                 log.info("Next medicine schedule for patientId: {} is in {} minutes at {}", patient.getId(), minutes, next.getTime());
-                return ResponseEntity.ok(new MedicineScheduleCheckResponse(false, minutes));
+                String message = next.getMedicine().getMedicineName();
+                String label = next.getDayOfWeek() + " " + next.getTime();
+                return ResponseEntity.ok(new MedicineScheduleCheckResponse(false, minutes, message, label));
             } else {
                 log.info("No more medicine schedules for today for patientId: {}", patient.getId());
-                return ResponseEntity.ok(new MedicineScheduleCheckResponse(false, null));
+                return ResponseEntity.ok(new MedicineScheduleCheckResponse(false, null, null, null));
             }
         }
     }

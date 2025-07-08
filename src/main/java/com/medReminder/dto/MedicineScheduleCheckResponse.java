@@ -10,4 +10,6 @@ import lombok.NoArgsConstructor;
 public class MedicineScheduleCheckResponse {
     private boolean scheduled;
     private Long minutesUntilNextSchedule;
+    private String message;
+    private String label;
 } 
