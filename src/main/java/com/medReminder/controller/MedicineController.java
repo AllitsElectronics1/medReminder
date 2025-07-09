@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.List;
 import com.medReminder.dto.MedicineScheduleCheckResponse;
 import lombok.extern.slf4j.Slf4j;
+import com.medReminder.entity.TimeOfDay;
 
 @Slf4j
 @RestController
@@ -60,6 +61,17 @@ public class MedicineController {
         return ResponseEntity.ok().build();
     }
 
+    private TimeOfDay getTimeOfDay(LocalTime time) {
+        int hour = time.getHour();
+        if (hour >= 6 && hour < 12) {
+            return TimeOfDay.MORNING;
+        } else if (hour >= 12 && hour < 18) {
+            return TimeOfDay.AFTERNOON;
+        } else {
+            return TimeOfDay.EVENING;
+        }
+    }
+
     @GetMapping("/check-schedule")
     public ResponseEntity<MedicineScheduleCheckResponse> checkMedicineSchedule(@RequestParam String deviceId) {
         log.info("Received check-schedule request for deviceId: {}", deviceId);
@@ -79,7 +91,7 @@ public class MedicineController {
         if (currentSchedule != null) {
             log.info("Medicine is scheduled for now for patientId: {}", patient.getId());
             String message = currentSchedule.getMedicine().getMedicineName();
-            String label = today + " " + now;
+            String label = getTimeOfDay(now).toString();
             return ResponseEntity.ok(new MedicineScheduleCheckResponse(true, 0L, message, label));
         } else {
             MedicineSchedule next = medicineScheduleRepository.findFirstByPatientIdAndActiveAndDayOfWeekAndTimeAfterOrderByTimeAsc(
@@ -88,7 +100,7 @@ public class MedicineController {
                 long minutes = java.time.temporal.ChronoUnit.MINUTES.between(now, next.getTime());
                 log.info("Next medicine schedule for patientId: {} is in {} minutes at {}", patient.getId(), minutes, next.getTime());
                 String message = next.getMedicine().getMedicineName();
-                String label = next.getDayOfWeek() + " " + next.getTime();
+                String label = getTimeOfDay(next.getTime()).toString();
                 return ResponseEntity.ok(new MedicineScheduleCheckResponse(false, minutes, message, label));
             } else {
                 log.info("No more medicine schedules for today for patientId: {}", patient.getId());
