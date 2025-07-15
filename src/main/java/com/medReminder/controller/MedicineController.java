@@ -21,6 +21,8 @@ import java.util.List;
 import com.medReminder.dto.MedicineScheduleCheckResponse;
 import lombok.extern.slf4j.Slf4j;
 import com.medReminder.entity.TimeOfDay;
+import com.medReminder.repository.DeviceRepository;
+import com.medReminder.entity.Device;
 
 @Slf4j
 @RestController
@@ -34,6 +36,9 @@ public class MedicineController {
 
     @Autowired
     private MedicineScheduleRepository medicineScheduleRepository;
+
+    @Autowired
+    private DeviceRepository deviceRepository;
 
     @PostMapping
     public ResponseEntity<Medicine> createMedicine(@RequestBody Medicine medicine) {
@@ -73,13 +78,23 @@ public class MedicineController {
     }
 
     @GetMapping("/check-schedule")
-    public ResponseEntity<MedicineScheduleCheckResponse> checkMedicineSchedule(@RequestParam String deviceId) {
-        log.info("Received check-schedule request for deviceId: {}", deviceId);
-        Patient patient = patientRepository.findByDeviceId(deviceId);
-        if (patient == null) {
-            log.warn("No patient found for deviceId: {}", deviceId);
+    public ResponseEntity<MedicineScheduleCheckResponse> checkMedicineSchedule(@RequestParam String macAddress) {
+        log.info("Received check-schedule request for macAddress: {}", macAddress);
+        
+        // Find device by MAC address
+        Optional<Device> deviceOpt = deviceRepository.findByMacAddress(macAddress);
+        if (deviceOpt.isEmpty()) {
+            log.warn("No device found for macAddress: {}", macAddress);
             return ResponseEntity.badRequest().body(new MedicineScheduleCheckResponse(false, null, null, null));
         }
+        
+        Device device = deviceOpt.get();
+        Patient patient = device.getPatient();
+        if (patient == null) {
+            log.warn("No patient associated with device macAddress: {}", macAddress);
+            return ResponseEntity.badRequest().body(new MedicineScheduleCheckResponse(false, null, null, null));
+        }
+        
         LocalTime now = LocalTime.now().withSecond(0).withNano(0);
         DayOfWeek today = DayOfWeek.from(java.time.LocalDate.now());
         log.info("Checking schedule for patientId: {}, at time: {}, day: {}", patient.getId(), now, today);
