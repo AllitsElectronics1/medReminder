@@ -16,6 +16,7 @@ import java.util.List;
 @RequestMapping("/api/medicine-schedules")
 @RequiredArgsConstructor
 @Tag(name = "Medicine Schedule", description = "Medicine Schedule management APIs")
+@CrossOrigin(origins = "*", maxAge = 3600)
 public class MedicineScheduleController {
     private final MedicineScheduleService scheduleService;
 

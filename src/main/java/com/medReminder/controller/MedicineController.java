@@ -28,6 +28,7 @@ import com.medReminder.entity.Device;
 @RestController
 @RequestMapping("/api/medicines")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "*", maxAge = 3600)
 public class MedicineController {
     private final MedicineService medicineService;
 

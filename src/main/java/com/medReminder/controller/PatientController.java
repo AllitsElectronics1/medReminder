@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/patients")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "*", maxAge = 3600)
 public class PatientController {
     private final PatientService patientService;
     private final MedicineRepository medicineRepository;

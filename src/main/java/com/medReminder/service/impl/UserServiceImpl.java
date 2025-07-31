@@ -29,25 +29,43 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User getUserById(Long id) {
-        // TODO: Implement repository logic
-        return null;
+        log.info("Finding user by ID: {}", id);
+        return userRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
     }
 
     @Override
     public List<User> getAllUsers() {
-        // TODO: Implement repository logic
-        return null;
+        log.info("Retrieving all users");
+        return userRepository.findAll();
     }
 
     @Override
     public User updateUser(Long id, User user) {
-        // TODO: Implement repository logic
-        return user;
+        log.info("Updating user with ID: {}", id);
+        User existingUser = getUserById(id);
+        
+        existingUser.setName(user.getName());
+        existingUser.setEmail(user.getEmail());
+        if (user.getPassword() != null && !user.getPassword().isEmpty()) {
+            existingUser.setPassword(passwordEncoder.encode(user.getPassword()));
+        }
+        existingUser.setRole(user.getRole());
+        
+        User updatedUser = userRepository.save(existingUser);
+        log.info("User updated successfully: {}", updatedUser.getEmail());
+        return updatedUser;
     }
 
     @Override
     public void deleteUser(Long id) {
-        // TODO: Implement repository logic
+        log.info("Deleting user with ID: {}", id);
+        if (userRepository.existsById(id)) {
+            userRepository.deleteById(id);
+            log.info("User deleted successfully");
+        } else {
+            throw new RuntimeException("User not found with id: " + id);
+        }
     }
 
     @Override
