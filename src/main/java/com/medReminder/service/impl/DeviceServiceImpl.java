@@ -8,6 +8,7 @@ import com.medReminder.exception.DeviceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -34,31 +35,46 @@ public class DeviceServiceImpl implements DeviceService {
 
     @Override
     public Device getDeviceById(Long id) {
-        // TODO: Implement repository logic
-        return null;
+        return deviceRepository.findById(id)
+            .orElseThrow(() -> new DeviceNotFoundException("Device not found with id: " + id));
     }
 
     @Override
     public Device getDeviceByPatientId(Long patientId) {
-        // TODO: Implement repository logic
-        return null;
+        return deviceRepository.findByPatientId(patientId)
+            .orElse(null);
+    }
+
+    @Override
+    public List<Device> getDevicesByPatientId(Long patientId) {
+        return deviceRepository.findAllByPatientId(patientId);
     }
 
     @Override
     public Device updateDevice(Long id, Device device) {
-        // TODO: Implement repository logic
-        return device;
+        Device existingDevice = getDeviceById(id);
+        
+        existingDevice.setDeviceSerialNumber(device.getDeviceSerialNumber());
+        existingDevice.setIpAddress(device.getIpAddress());
+        existingDevice.setStatus(device.getStatus());
+        existingDevice.setLastSyncTime(device.getLastSyncTime());
+        
+        return deviceRepository.save(existingDevice);
     }
 
     @Override
     public Device updateDeviceStatus(Long id, String status) {
-        // TODO: Implement repository logic
-        return null;
+        Device device = getDeviceById(id);
+        device.setStatus(DeviceStatus.valueOf(status.toUpperCase()));
+        return deviceRepository.save(device);
     }
 
     @Override
     public void deleteDevice(Long id) {
-        // TODO: Implement repository logic
+        if (!deviceRepository.existsById(id)) {
+            throw new DeviceNotFoundException("Device not found with id: " + id);
+        }
+        deviceRepository.deleteById(id);
     }
 
     @Override

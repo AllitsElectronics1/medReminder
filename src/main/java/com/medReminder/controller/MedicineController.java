@@ -2,15 +2,24 @@ package com.medReminder.controller;
 
 import com.medReminder.entity.Medicine;
 import com.medReminder.service.MedicineService;
+import com.medReminder.service.UserService;
+import com.medReminder.service.DeviceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.medReminder.repository.PatientRepository;
+import com.medReminder.repository.MedicineRepository;
 import com.medReminder.repository.MedicineScheduleRepository;
 import com.medReminder.entity.Patient;
 import com.medReminder.entity.MedicineSchedule;
+import com.medReminder.entity.User;
+import com.medReminder.entity.Device;
+import com.medReminder.entity.DeviceStatus;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalTime;
+import java.time.LocalDateTime;
 import java.time.DayOfWeek;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
@@ -19,10 +28,11 @@ import java.util.Map;
 
 import java.util.List;
 import com.medReminder.dto.MedicineScheduleCheckResponse;
+import com.medReminder.dto.MedicineRequest;
 import lombok.extern.slf4j.Slf4j;
 import com.medReminder.entity.TimeOfDay;
 import com.medReminder.repository.DeviceRepository;
-import com.medReminder.entity.Device;
+import jakarta.validation.Valid;
 
 @Slf4j
 @RestController
@@ -31,9 +41,14 @@ import com.medReminder.entity.Device;
 @CrossOrigin(origins = "*", maxAge = 3600)
 public class MedicineController {
     private final MedicineService medicineService;
+    private final UserService userService;
+    private final DeviceService deviceService;
 
     @Autowired
     private PatientRepository patientRepository;
+
+    @Autowired
+    private MedicineRepository medicineRepository;
 
     @Autowired
     private MedicineScheduleRepository medicineScheduleRepository;
@@ -42,8 +57,104 @@ public class MedicineController {
     private DeviceRepository deviceRepository;
 
     @PostMapping
-    public ResponseEntity<Medicine> createMedicine(@RequestBody Medicine medicine) {
-        return ResponseEntity.ok(medicineService.createMedicine(medicine));
+    @Transactional
+    public ResponseEntity<Medicine> createMedicine(@Valid @RequestBody MedicineRequest request) {
+        log.info("Creating medicine: {} for patient ID: {}", request.getMedicineName(), request.getPatientId());
+        
+        Patient patient;
+        
+        // Handle patient selection
+        if (request.getPatientId() != null) {
+            // Android app: specific patient ID provided
+            Optional<Patient> patientOpt = patientRepository.findById(request.getPatientId());
+            if (patientOpt.isEmpty()) {
+                log.error("Medicine creation failed: patient not found with ID: {}", request.getPatientId());
+                return ResponseEntity.badRequest().build();
+            }
+            patient = patientOpt.get();
+        } else {
+            // Web app: use current user's first patient
+            String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+            
+            List<Patient> userPatients = patientRepository.findByUserEmail(currentUserEmail);
+            if (userPatients.isEmpty()) {
+                log.error("Medicine creation failed: no patients found for user: {}", currentUserEmail);
+                return ResponseEntity.badRequest().body(null);
+            }
+            
+            patient = userPatients.get(0); // Use first patient
+            log.info("Using first patient for user: {} - Patient: {}", currentUserEmail, patient.getName());
+        }
+        
+        // Handle device creation/update if deviceId is provided
+        if (request.getDeviceId() != null && !request.getDeviceId().trim().isEmpty()) {
+            try {
+                // Update patient's device ID
+                patient.setDeviceId(request.getDeviceId());
+                patient = patientRepository.save(patient);
+                log.info("Updated patient device ID: {}", request.getDeviceId());
+                
+                // Create or update device
+                Device existingDevice = deviceService.getDeviceByPatientId(patient.getId());
+                if (existingDevice != null) {
+                    // Update existing device
+                    existingDevice.setDeviceSerialNumber(request.getDeviceId());
+                    deviceService.updateDevice(existingDevice.getDeviceId(), existingDevice);
+                    log.info("Updated existing device for patient: {}", patient.getName());
+                } else {
+                    // Create new device
+                    Device device = new Device();
+                    device.setPatient(patient);
+                    device.setDeviceSerialNumber(request.getDeviceId());
+                    device.setStatus(DeviceStatus.ACTIVE);
+                    device.setLastSyncTime(LocalDateTime.now()); // Required field
+                    deviceService.createDevice(device);
+                    log.info("Created new device for patient: {}", patient.getName());
+                }
+            } catch (Exception e) {
+                log.error("Failed to create/update device: {}", e.getMessage(), e);
+                // Continue with medicine creation even if device fails
+            }
+        }
+        
+        // Create the medicine
+        Medicine medicine = new Medicine();
+        medicine.setPatient(patient);
+        medicine.setMedicineName(request.getMedicineName());
+        medicine.setDosage(request.getDosage());
+        medicine.setStartDate(request.getStartDate());
+        medicine.setEndDate(request.getEndDate());
+        
+        medicine = medicineRepository.save(medicine);
+        log.info("Created medicine: {} for patient: {}", medicine.getMedicineName(), patient.getName());
+        
+        // Create medicine schedules if schedule information is provided
+        if (request.getDaysOfWeek() != null && !request.getDaysOfWeek().isEmpty() && request.getTime() != null) {
+            try {
+                log.info("Creating {} schedules for medicine: {}", request.getDaysOfWeek().size(), medicine.getMedicineName());
+                for (DayOfWeek dayOfWeek : request.getDaysOfWeek()) {
+                    MedicineSchedule schedule = new MedicineSchedule();
+                    schedule.setMedicine(medicine);
+                    schedule.setPatient(patient);
+                    schedule.setDayOfWeek(dayOfWeek);
+                    schedule.setTime(request.getTime());
+                    schedule.setReminderMinutesBefore(request.getReminderMinutesBefore());
+                    schedule.setActive(true);
+                    MedicineSchedule savedSchedule = medicineScheduleRepository.save(schedule);
+                    log.info("Created schedule ID: {} for {} at {} on {}", 
+                        savedSchedule.getId(), medicine.getMedicineName(), request.getTime(), dayOfWeek);
+                }
+                log.info("Successfully created {} schedules", request.getDaysOfWeek().size());
+            } catch (Exception e) {
+                log.error("Failed to create schedules: {}", e.getMessage(), e);
+                // Continue even if schedule creation fails
+            }
+        } else {
+            log.info("No schedule information provided, skipping schedule creation");
+        }
+        
+        log.info("Successfully created medicine with schedules for patient: {}", patient.getName());
+        return ResponseEntity.ok(medicine);
     }
 
     @GetMapping("/{id}")

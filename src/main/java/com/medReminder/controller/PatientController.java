@@ -3,9 +3,16 @@ package com.medReminder.controller;
 import com.medReminder.entity.Patient;
 import com.medReminder.entity.Medicine;
 import com.medReminder.service.PatientService;
+import com.medReminder.service.UserService;
+import com.medReminder.entity.User; 
 import com.medReminder.dto.PatientCreationRequest;
 import com.medReminder.repository.MedicineRepository;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,14 +27,26 @@ import java.util.stream.Collectors;
 public class PatientController {
     private final PatientService patientService;
     private final MedicineRepository medicineRepository;
+    private final UserService userService; 
 
     @PostMapping("/create")
     public ResponseEntity<Patient> createPatientFromRequest(@Valid @RequestBody PatientCreationRequest request) {
+        System.out.println("=== CALLED /create ENDPOINT ===");
         return ResponseEntity.ok(patientService.createPatient(request));
     }
 
     @PostMapping
     public ResponseEntity<Patient> createPatient(@RequestBody Patient patient) {
+         System.out.println("=== PATIENT CREATION DEBUG ===");
+    
+    // Get authentication from SecurityContext
+    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+    System.out.println("Authentication: " + (auth != null ? "EXISTS" : "NULL"));
+    
+    if (auth != null) {
+        System.out.println("Principal: " + auth.getPrincipal());
+        System.out.println("Is authenticated: " + auth.isAuthenticated());
+    }
         return ResponseEntity.ok(patientService.savePatient(patient));
     }
 
@@ -57,4 +76,4 @@ public class PatientController {
         patientService.deletePatient(id);
         return ResponseEntity.ok().build();
     }
-} 
+}

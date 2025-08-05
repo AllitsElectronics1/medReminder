@@ -26,7 +26,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
-
+import org.springframework.security.core.Authentication;
 import java.util.Comparator;
 import java.util.List;
 
@@ -138,56 +138,70 @@ public class PatientServiceImpl implements PatientService {
     }
 
     @Override
-    @Transactional
-    public Patient createPatient(PatientCreationRequest request) {
-        log.debug("Creating new patient with {} medicine schedules", request.getMedicineSchedules().size());
-        
-        // Get current user
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        User currentUser = userService.findByEmail(email)
-            .orElseThrow(() -> new RuntimeException("User not found"));
-        
-        // Create and save patient
-        Patient patient = new Patient();
-        patient.setName(request.getName());
-        patient.setDeviceId(request.getDeviceId());
-        patient.setUser(currentUser);
-        patient = patientRepository.save(patient);
-
-        Device device = new Device();
-        device.setPatient(patient);
-        device.setDeviceSerialNumber(request.getDeviceId());
-        device.setStatus(DeviceStatus.ACTIVE);
-        device.setDeviceSerialNumber(request.getDeviceId());
-        deviceService.createDevice(device); 
-
-        // Process each medicine schedule
-        for (PatientCreationRequest.MedicineScheduleDTO scheduleDTO : request.getMedicineSchedules()) {
-            // Create and save medicine
-            Medicine medicine = new Medicine();
-            medicine.setMedicineName(scheduleDTO.getMedicineName());
-            medicine.setDosage(scheduleDTO.getDosage());
-            medicine.setPatient(patient);
-            medicine.setStartDate(LocalDate.now());
-            medicine.setDosage(scheduleDTO.getDosage());
-            medicine = medicineRepository.save(medicine);
-
-            // Create schedule for each selected day
-            for (DayOfWeek dayOfWeek : scheduleDTO.getDaysOfWeek()) {
-                MedicineSchedule schedule = new MedicineSchedule();
-                schedule.setMedicine(medicine);
-                schedule.setPatient(patient);
-                schedule.setDayOfWeek(dayOfWeek);
-                schedule.setTime(scheduleDTO.getTime());
-                schedule.setReminderMinutesBefore(scheduleDTO.getReminderMinutesBefore());
-                schedule.setActive(true);
-                medicineScheduleRepository.save(schedule);
-            }
-        }
-
-        log.debug("Successfully created patient with ID: {}", patient.getId());
-        return patientRepository.findById(patient.getId()).orElseThrow();
+@Transactional
+public Patient createPatient(PatientCreationRequest request) {
+    log.debug("Creating new patient with {} medicine schedules", request.getMedicineSchedules().size());
+    
+    // Add debugging for authentication
+    System.out.println("=== PATIENT SERVICE DEBUG ===");
+    
+    // Get current user
+    String email = SecurityContextHolder.getContext().getAuthentication().getName();
+    System.out.println("Email from SecurityContext: " + email);
+    
+    // Check if authentication exists
+    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+    System.out.println("Authentication object: " + (auth != null ? "EXISTS" : "NULL"));
+    if (auth != null) {
+        System.out.println("Principal: " + auth.getPrincipal());
+        System.out.println("Is authenticated: " + auth.isAuthenticated());
+        System.out.println("Authorities: " + auth.getAuthorities());
     }
+    
+    User currentUser = userService.findByEmail(email)
+        .orElseThrow(() -> new RuntimeException("User not found"));
+    
+    // Create and save patient
+    Patient patient = new Patient();
+    patient.setName(request.getName());
+    patient.setDeviceId(request.getDeviceId());
+    patient.setUser(currentUser);
+    patient = patientRepository.save(patient);
+
+    Device device = new Device();
+    device.setPatient(patient);
+    device.setDeviceSerialNumber(request.getDeviceId());
+    device.setStatus(DeviceStatus.ACTIVE);
+    device.setDeviceSerialNumber(request.getDeviceId());
+    deviceService.createDevice(device); 
+
+    // Process each medicine schedule
+    for (PatientCreationRequest.MedicineScheduleDTO scheduleDTO : request.getMedicineSchedules()) {
+        // Create and save medicine
+        Medicine medicine = new Medicine();
+        medicine.setMedicineName(scheduleDTO.getMedicineName());
+        medicine.setDosage(scheduleDTO.getDosage());
+        medicine.setPatient(patient);
+        medicine.setStartDate(LocalDate.now());
+        medicine.setDosage(scheduleDTO.getDosage());
+        medicine = medicineRepository.save(medicine);
+
+        // Create schedule for each selected day
+        for (DayOfWeek dayOfWeek : scheduleDTO.getDaysOfWeek()) {
+            MedicineSchedule schedule = new MedicineSchedule();
+            schedule.setMedicine(medicine);
+            schedule.setPatient(patient);
+            schedule.setDayOfWeek(dayOfWeek);
+            schedule.setTime(scheduleDTO.getTime());
+            schedule.setReminderMinutesBefore(scheduleDTO.getReminderMinutesBefore());
+            schedule.setActive(true);
+            medicineScheduleRepository.save(schedule);
+        }
+    }
+
+    log.debug("Successfully created patient with ID: {}", patient.getId());
+    return patientRepository.findById(patient.getId()).orElseThrow();
+}
 
     @Override
     public List<Patient> getAllPatients() {
